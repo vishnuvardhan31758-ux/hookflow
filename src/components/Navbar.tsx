@@ -1,95 +1,204 @@
 "use client";
 
-import React from "react";
-import { Activity, ShieldCheck, BookOpen, Layers, RefreshCw, ExternalLink } from "lucide-react";
+import React, { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
+import {
+  Activity,
+  Layers,
+  RefreshCw,
+  LogOut,
+  LogIn,
+  Key,
+  ShieldCheck,
+  Server,
+  Terminal,
+  User as UserIcon,
+  ChevronDown,
+} from "lucide-react";
+
+export type NavTab = "cockpit" | "endpoints" | "events" | "keys" | "audit";
 
 interface NavbarProps {
+  activeTab: NavTab;
+  onSelectTab: (tab: NavTab) => void;
   onOpenArchitecture: () => void;
   onRefresh: () => void;
   isRefreshing: boolean;
-  eventCount: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  activeTab,
+  onSelectTab,
   onOpenArchitecture,
   onRefresh,
   isRefreshing,
-  eventCount,
 }) => {
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  const handleLogout = async () => {
+    setShowUserMenu(false);
+    await logout();
+    showToast("Signed out successfully.", "info");
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-gray-800 bg-[#090d16]/90 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand & Status */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 border border-sky-400/30">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-sky-200 to-sky-400 bg-clip-text text-transparent">
-                  HookFlow
-                </span>
-                <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase rounded-full bg-sky-950 text-sky-400 border border-sky-800">
-                  v1.0 Core
-                </span>
+    <header className="sticky top-0 z-40 w-full border-b border-gray-800 bg-[#090d16]/95 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="h-16 flex items-center justify-between">
+          {/* Brand & Status */}
+          <div className="flex items-center space-x-6">
+            <div
+              onClick={() => onSelectTab("cockpit")}
+              className="flex items-center space-x-2.5 cursor-pointer group"
+            >
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 border border-sky-400/30 group-hover:scale-105 transition">
+                <Activity className="w-5 h-5 text-white" />
               </div>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Distributed Ingestion & Resilient Webhook Gateway
-              </p>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-base sm:text-lg tracking-tight bg-gradient-to-r from-white via-sky-200 to-sky-400 bg-clip-text text-transparent">
+                    HookFlow
+                  </span>
+                  <span className="px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded-full bg-sky-950 text-sky-400 border border-sky-800">
+                    Enterprise
+                  </span>
+                </div>
+              </div>
             </div>
+
+            {/* Navigation Tabs */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {[
+                { id: "cockpit" as NavTab, label: "Cockpit", icon: Activity },
+                { id: "endpoints" as NavTab, label: "Endpoints", icon: Server },
+                { id: "events" as NavTab, label: "Event Ledger", icon: Terminal },
+                { id: "keys" as NavTab, label: "API Keys", icon: Key },
+                { id: "audit" as NavTab, label: "Audit Trail", icon: ShieldCheck },
+              ].map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => onSelectTab(item.id)}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
+                      isActive
+                        ? "bg-sky-500/15 text-sky-400 border border-sky-500/30 shadow-sm"
+                        : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/40 border border-transparent"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
 
-          <div className="hidden md:flex items-center space-x-2 pl-4 border-l border-gray-800">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-mono text-emerald-400">EDGE OPERATIONAL</span>
+          {/* Right Action Controls & User Profile */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={onOpenArchitecture}
+              className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition"
+              title="Architecture & ADRs"
+            >
+              <Layers className="w-3.5 h-3.5 text-sky-400" />
+              <span>Architecture & ADRs</span>
+            </button>
+
+            <button
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              className="p-2 text-xs rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            </button>
+
+            {/* User Profile Dropdown */}
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 p-1.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 transition"
+                >
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-xs font-bold text-white">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-xs font-medium text-gray-200 hidden md:block max-w-[100px] truncate">
+                    {user.name}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-gray-900 border border-gray-800 shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+                    <div className="pb-3 border-b border-gray-800">
+                      <div className="font-semibold text-xs text-white truncate">
+                        {user.name}
+                      </div>
+                      <div className="text-[11px] text-gray-400 truncate">
+                        {user.email}
+                      </div>
+                      <div className="mt-1 flex items-center space-x-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-950 text-sky-400 border border-sky-800">
+                          {user.role}
+                        </span>
+                        <span className="text-[10px] text-gray-500 truncate">
+                          {user.organization}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center space-x-2 px-2.5 py-1.5 text-xs text-rose-400 hover:bg-rose-950/40 rounded-lg transition"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-500 hover:bg-sky-400 text-gray-950 shadow-md transition"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </Link>
+            )}
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onOpenArchitecture}
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition"
-            title="Inspect System Architecture & ADRs"
-          >
-            <Layers className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden sm:inline">System Architecture</span>
-          </button>
-
-          <a
-            href="/api/openapi"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">OpenAPI 3.1</span>
-            <ExternalLink className="w-3 h-3 text-gray-400" />
-          </a>
-
-          <a
-            href="/api/healthz"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Healthz</span>
-            <ExternalLink className="w-3 h-3 text-gray-400" />
-          </a>
-
-          <button
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="p-2 text-xs font-medium rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 border border-sky-500/30 transition disabled:opacity-50"
-            title="Refresh Ledger"
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          </button>
+        {/* Mobile Navigation Pills */}
+        <div className="flex lg:hidden overflow-x-auto py-2 gap-2 border-t border-gray-800/80">
+          {[
+            { id: "cockpit" as NavTab, label: "Cockpit" },
+            { id: "endpoints" as NavTab, label: "Endpoints" },
+            { id: "events" as NavTab, label: "Ledger" },
+            { id: "keys" as NavTab, label: "API Keys" },
+            { id: "audit" as NavTab, label: "Audit" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onSelectTab(item.id)}
+              className={`px-3 py-1 text-xs font-medium rounded-lg shrink-0 ${
+                activeTab === item.id
+                  ? "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
     </header>
