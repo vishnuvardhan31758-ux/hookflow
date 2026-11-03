@@ -1,0 +1,35 @@
+name: HookFlow Production CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  verify:
+    name: Verify Codebase, Types & Algorithmic Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: "package.json"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static Type Check
+        run: npm run typecheck
+
+      - name: Run Algorithmic & Resilient Test Suites (Vitest)
+        run: npm test
+
+      - name: Build Production Bundle
+        run: npm run build
