@@ -197,7 +197,7 @@ curl -X POST https://your-app.vercel.app/api/v1/ingest \
 
 ---
 
-## 🎓 Academic Relevance for Master's in Germany (TU9)
+
 
 | Curriculum Area | Module In HookFlow |
 | :--- | :--- |
@@ -208,5 +208,3 @@ curl -X POST https://your-app.vercel.app/api/v1/ingest \
 
 ---
 
-## 📄 License
-MIT License. Open source and free for academic and commercial use.
