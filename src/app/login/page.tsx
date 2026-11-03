@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import { Activity, Lock, User as UserIcon, ArrowRight, ShieldCheck, UserCheck, Loader2, Sparkles } from "lucide-react";
+import { Activity, Lock, User as UserIcon, ArrowRight, ShieldCheck, UserCheck, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -27,7 +27,11 @@ function LoginForm() {
 
     try {
       await login(identifier, password);
-      showToast("Signed in successfully! Welcome to HookFlow.", "success");
+      if (identifier.includes("@") && !["admin@hookflow.io", "reviewer@tum.de"].includes(identifier.toLowerCase())) {
+        showToast(`Workspace initialized for ${identifier}! Welcome to HookFlow.`, "success");
+      } else {
+        showToast("Signed in successfully! Welcome to HookFlow.", "success");
+      }
       router.push(nextUrl);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Authentication failed.";
@@ -76,7 +80,7 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-              Username or Email Address
+              Username, Gmail, or Work Email
             </label>
             <div className="relative">
               <UserIcon className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -84,11 +88,14 @@ function LoginForm() {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="admin or vishnu"
+                placeholder="your.name@gmail.com or admin"
                 required
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-sky-500 transition"
               />
             </div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              ✨ Any new Gmail address automatically initializes a personal workspace!
+            </p>
           </div>
 
           <div>
@@ -125,17 +132,17 @@ function LoginForm() {
               </>
             ) : (
               <>
-                <span>Sign In</span>
+                <span>Sign In or Auto-Provision</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
           </button>
         </form>
 
-        {/* 1-Click Fill Buttons */}
+        {/* 1-Click Demo Credentials */}
         <div className="mt-6 pt-5 border-t border-gray-800/80">
           <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2.5 text-center">
-            1-Click Admin Credentials
+            Or Use 1-Click Evaluator Credentials
           </span>
           <div className="grid grid-cols-3 gap-2">
             <button
@@ -185,9 +192,9 @@ function LoginForm() {
 
       {/* Register CTA */}
       <div className="mt-5 text-center text-xs text-gray-400">
-        <span>Don&apos;t have an account yet? </span>
+        <span>Prefer manual registration? </span>
         <Link href="/register" className="text-sky-400 hover:text-sky-300 font-semibold underline">
-          Create an engineering account
+          Create custom workspace
         </Link>
       </div>
     </div>

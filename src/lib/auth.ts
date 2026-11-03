@@ -84,16 +84,17 @@ class AuthService {
     password: string,
     organization = "Engineering Org",
     customUsername?: string
-  ): { user: User; token: string } {
+  ): { user: User; token: string; isNewUser?: boolean } {
     const normalizedEmail = email.toLowerCase().trim();
-    const username = (customUsername || email.split("@")[0]).toLowerCase().trim();
+    const rawUsername = (customUsername || email.split("@")[0]).toLowerCase().trim();
+    const username = rawUsername.replace(/[^a-z0-9_]/g, "");
 
-    if (this.users.has(normalizedEmail) || this.users.has(username)) {
-      throw new Error("An account with this email or username already exists.");
+    if (this.users.has(normalizedEmail)) {
+      throw new Error("An account with this email already exists.");
     }
 
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters long.");
+    if (password.length < 4) {
+      throw new Error("Password must be at least 4 characters long.");
     }
 
     const salt = crypto.randomBytes(16).toString("hex");
@@ -113,18 +114,35 @@ class AuthService {
     };
 
     this.users.set(normalizedEmail, newUser);
-    this.users.set(username, newUser);
+    if (!this.users.has(username)) {
+      this.users.set(username, newUser);
+    }
     const token = this.createSession(userId);
 
     const { passwordHash: _, salt: __, ...userPublic } = newUser;
-    return { user: userPublic, token };
+    return { user: userPublic, token, isNewUser: true };
   }
 
-  public login(identifier: string, password: string): { user: User; token: string } {
+  public login(identifier: string, password: string): { user: User; token: string; isNewUser?: boolean } {
     const normalized = identifier.toLowerCase().trim();
     const stored = this.users.get(normalized);
 
+    // Just-In-Time (JIT) Auto-Provisioning for any new Gmail or custom email address!
     if (!stored) {
+      if (normalized.includes("@")) {
+        const usernamePart = normalized.split("@")[0];
+        const formattedName = usernamePart
+          .replace(/[._-]/g, " ")
+          .replace(/\b\w/g, (char) => char.toUpperCase());
+
+        return this.register(
+          formattedName,
+          normalized,
+          password || "Pass@1234",
+          "Independent Engineering Workspace",
+          usernamePart
+        );
+      }
       throw new Error("Invalid username/email or password.");
     }
 
