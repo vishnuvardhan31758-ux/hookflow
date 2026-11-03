@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
-import { Activity, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, Loader2 } from "lucide-react";
+import { Activity, Lock, User as UserIcon, ArrowRight, ShieldCheck, UserCheck, Loader2, Sparkles } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
@@ -15,7 +15,7 @@ function LoginForm() {
   const { login } = useAuth();
   const { showToast } = useToast();
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(identifier, password);
       showToast("Signed in successfully! Welcome to HookFlow.", "success");
       router.push(nextUrl);
     } catch (err: unknown) {
@@ -38,8 +38,8 @@ function LoginForm() {
     }
   };
 
-  const fillCredentials = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
+  const fillCredentials = (demoUser: string, demoPass: string) => {
+    setIdentifier(demoUser);
     setPassword(demoPass);
     setError(null);
   };
@@ -76,15 +76,15 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-              Work Email Address
+              Username or Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <UserIcon className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="admin or vishnu"
                 required
                 className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-gray-950 border border-gray-800 text-gray-100 placeholder-gray-500 focus:outline-none focus:border-sky-500 transition"
               />
@@ -132,37 +132,51 @@ function LoginForm() {
           </button>
         </form>
 
-        {/* Quick Demo Fill Buttons */}
+        {/* 1-Click Fill Buttons */}
         <div className="mt-6 pt-5 border-t border-gray-800/80">
-          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2 text-center">
-            Quick 1-Click Demo Credentials
+          <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block mb-2.5 text-center">
+            1-Click Admin Credentials
           </span>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
-              onClick={() => fillCredentials("admin@hookflow.io", "MasterAdmin2026!")}
-              className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 text-left transition"
+              onClick={() => fillCredentials("admin", "Admin@2026!")}
+              className="p-2 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 text-left transition"
             >
               <div className="flex items-center space-x-1 text-sky-400 text-[11px] font-semibold">
                 <ShieldCheck className="w-3 h-3" />
-                <span>Lead Admin</span>
+                <span>Admin</span>
               </div>
-              <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
-                admin@hookflow.io
+              <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                admin
               </div>
             </button>
 
             <button
               type="button"
-              onClick={() => fillCredentials("reviewer@tum.de", "GermanMasters2026!")}
-              className="p-2 rounded-lg bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 text-left transition"
+              onClick={() => fillCredentials("vishnu", "Vishnu@2026!")}
+              className="p-2 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 text-left transition"
+            >
+              <div className="flex items-center space-x-1 text-indigo-400 text-[11px] font-semibold">
+                <Sparkles className="w-3 h-3" />
+                <span>Vishnu</span>
+              </div>
+              <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                vishnu
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => fillCredentials("reviewer", "GermanMasters2026!")}
+              className="p-2 rounded-xl bg-gray-800/50 hover:bg-gray-800 border border-gray-700/60 text-left transition"
             >
               <div className="flex items-center space-x-1 text-emerald-400 text-[11px] font-semibold">
                 <UserCheck className="w-3 h-3" />
-                <span>TUM Reviewer</span>
+                <span>Reviewer</span>
               </div>
-              <div className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
-                reviewer@tum.de
+              <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                reviewer
               </div>
             </button>
           </div>

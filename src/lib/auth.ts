@@ -3,6 +3,7 @@ import crypto from "crypto";
 export interface User {
   id: string;
   name: string;
+  username: string;
   email: string;
   role: "ADMIN" | "ENGINEER" | "AUDITOR";
   organization: string;
@@ -28,25 +29,44 @@ class AuthService {
   }
 
   private seedDefaultUsers() {
-    // 1. Primary Master Admin Account
+    // 1. Vishnu Vardhan (Primary Admin)
+    const vishnuSalt = crypto.randomBytes(16).toString("hex");
+    const vishnuUser: StoredUser = {
+      id: "usr_admin_vishnu",
+      name: "Vishnu Vardhan",
+      username: "vishnu",
+      email: "vishnu@hookflow.io",
+      role: "ADMIN",
+      organization: "TU Munich & HookFlow Systems",
+      salt: vishnuSalt,
+      passwordHash: this.hashPassword("Vishnu@2026!", vishnuSalt),
+      createdAt: Date.now() - 86400000,
+    };
+    this.users.set(vishnuUser.email.toLowerCase(), vishnuUser);
+    this.users.set(vishnuUser.username.toLowerCase(), vishnuUser);
+
+    // 2. Standard System Admin
     const adminSalt = crypto.randomBytes(16).toString("hex");
     const adminUser: StoredUser = {
       id: "usr_admin_01",
-      name: "Vishnu Vardhan",
+      name: "Lead System Admin",
+      username: "admin",
       email: "admin@hookflow.io",
       role: "ADMIN",
-      organization: "TU Munich & HookFlow Systems",
+      organization: "HookFlow Systems",
       salt: adminSalt,
-      passwordHash: this.hashPassword("MasterAdmin2026!", adminSalt),
+      passwordHash: this.hashPassword("Admin@2026!", adminSalt),
       createdAt: Date.now() - 86400000,
     };
     this.users.set(adminUser.email.toLowerCase(), adminUser);
+    this.users.set(adminUser.username.toLowerCase(), adminUser);
 
-    // 2. German Academic Evaluator Account
+    // 3. German Academic Evaluator Account
     const evaluatorSalt = crypto.randomBytes(16).toString("hex");
     const evaluatorUser: StoredUser = {
       id: "usr_tum_reviewer",
       name: "Prof. Dr. Weber (TUM Admissions)",
+      username: "reviewer",
       email: "reviewer@tum.de",
       role: "AUDITOR",
       organization: "Technical University of Munich",
@@ -55,16 +75,25 @@ class AuthService {
       createdAt: Date.now() - 43200000,
     };
     this.users.set(evaluatorUser.email.toLowerCase(), evaluatorUser);
+    this.users.set(evaluatorUser.username.toLowerCase(), evaluatorUser);
   }
 
-  public register(name: string, email: string, password: string, organization = "Engineering Org"): { user: User; token: string } {
+  public register(
+    name: string,
+    email: string,
+    password: string,
+    organization = "Engineering Org",
+    customUsername?: string
+  ): { user: User; token: string } {
     const normalizedEmail = email.toLowerCase().trim();
-    if (this.users.has(normalizedEmail)) {
-      throw new Error("An account with this email address already exists.");
+    const username = (customUsername || email.split("@")[0]).toLowerCase().trim();
+
+    if (this.users.has(normalizedEmail) || this.users.has(username)) {
+      throw new Error("An account with this email or username already exists.");
     }
 
-    if (password.length < 8) {
-      throw new Error("Password must be at least 8 characters long.");
+    if (password.length < 6) {
+      throw new Error("Password must be at least 6 characters long.");
     }
 
     const salt = crypto.randomBytes(16).toString("hex");
@@ -74,6 +103,7 @@ class AuthService {
     const newUser: StoredUser = {
       id: userId,
       name: name.trim(),
+      username,
       email: normalizedEmail,
       role: "ENGINEER",
       organization,
@@ -83,23 +113,24 @@ class AuthService {
     };
 
     this.users.set(normalizedEmail, newUser);
+    this.users.set(username, newUser);
     const token = this.createSession(userId);
 
     const { passwordHash: _, salt: __, ...userPublic } = newUser;
     return { user: userPublic, token };
   }
 
-  public login(email: string, password: string): { user: User; token: string } {
-    const normalizedEmail = email.toLowerCase().trim();
-    const stored = this.users.get(normalizedEmail);
+  public login(identifier: string, password: string): { user: User; token: string } {
+    const normalized = identifier.toLowerCase().trim();
+    const stored = this.users.get(normalized);
 
     if (!stored) {
-      throw new Error("Invalid email or password.");
+      throw new Error("Invalid username/email or password.");
     }
 
     const computedHash = this.hashPassword(password, stored.salt);
     if (!crypto.timingSafeEqual(Buffer.from(stored.passwordHash, "hex"), Buffer.from(computedHash, "hex"))) {
-      throw new Error("Invalid email or password.");
+      throw new Error("Invalid username/email or password.");
     }
 
     const token = this.createSession(stored.id);

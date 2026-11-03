@@ -6,16 +6,18 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    const identifier = body.identifier || body.username || body.email;
+    const password = body.password;
 
-    if (!email || !password) {
+    if (!identifier || !password) {
       return NextResponse.json(
-        { error: "BadRequest", message: "Email and password are required." },
+        { error: "BadRequest", message: "Username/email and password are required." },
         { status: 400 }
       );
     }
 
-    const { user, token } = globalAuthService.login(email, password);
+    const { user, token } = globalAuthService.login(identifier, password);
 
     const clientIp =
       req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
       actorEmail: user.email,
       actorRole: user.role,
       ipAddress: clientIp,
-      details: `Successful authenticated session created for ${user.name}`,
+      details: `Successful authenticated session created for ${user.name} (@${user.username})`,
     });
 
     const response = NextResponse.json({
@@ -34,9 +36,8 @@ export async function POST(req: NextRequest) {
       token,
     });
 
-    // Set HTTP-only session cookie
     response.cookies.set("hookflow_session", token, {
-      httpOnly: false, // Accessible to client auth provider
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
