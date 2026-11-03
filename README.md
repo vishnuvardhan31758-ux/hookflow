@@ -103,7 +103,7 @@ Employs standard HTTP/2 Server-Sent Events (`text/event-stream`) to stream live 
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/hookflow.git
+git clone https://github.com/vishnuvardhan31758-ux/hookflow.git
 cd hookflow
 
 # Install production dependencies
@@ -149,7 +149,7 @@ This project is engineered to deploy live with zero costs:
 git init
 git add .
 git commit -m "feat: initial production-ready HookFlow release"
-git remote add origin https://github.com/YOUR_USERNAME/hookflow.git
+git remote add origin https://github.com/vishnuvardhan31758-ux/hookflow.git
 git push -u origin main
 ```
 
