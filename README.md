@@ -21,6 +21,20 @@ Modern web architectures rely heavily on **asynchronous inter-service communicat
 
 ---
 
+## 🌐 Live Production Links (24/7 Global Deployment)
+
+* **Live Engineering Cockpit:** [https://hookflow-ochre.vercel.app](https://hookflow-ochre.vercel.app)
+* **Live Ingestion Gateway:** `https://hookflow-ochre.vercel.app/api/v1/ingest`
+* **Live Subsystem Health Check:** [https://hookflow-ochre.vercel.app/api/healthz](https://hookflow-ochre.vercel.app/api/healthz)
+* **Interactive OpenAPI 3.1 Contract:** [https://hookflow-ochre.vercel.app/api/openapi](https://hookflow-ochre.vercel.app/api/openapi)
+* **GitHub Repository:** [https://github.com/vishnuvardhan31758-ux/hookflow](https://github.com/vishnuvardhan31758-ux/hookflow)
+
+### Demo Credentials for Academic Reviewers:
+* **Lead Systems Admin:** `admin@hookflow.io` / `MasterAdmin2026!`
+* **TUM Admissions Reviewer:** `reviewer@tum.de` / `GermanMasters2026!`
+
+---
+
 ## 🏛️ System Architecture
 
 ```
@@ -166,12 +180,12 @@ git push -u origin main
 
 ### Ingest Webhook Event
 ```bash
-curl -X POST https://your-app.vercel.app/api/v1/ingest \
+curl -X POST https://hookflow-ochre.vercel.app/api/v1/ingest \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: idemp_order_998822" \
   -d '{
     "source": "stripe.payment_intent.succeeded",
-    "destinationUrl": "https://your-app.vercel.app/api/v1/mock-receiver?status=200",
+    "destinationUrl": "https://hookflow-ochre.vercel.app/api/v1/mock-receiver?status=200",
     "payload": {
       "amount": 9900,
       "currency": "EUR",
