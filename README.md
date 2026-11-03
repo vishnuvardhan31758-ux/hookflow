@@ -7,9 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **M.Sc. Web Engineering & Distributed Systems Capstone Project**  
-> Tailored for Master’s Degree Applications in Germany (TU9 Universities: TU Munich, RWTH Aachen, TU Berlin, KIT, TU Dresden).
 
----
 
 ## 📌 Executive Summary
 
