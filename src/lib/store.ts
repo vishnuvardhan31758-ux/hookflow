@@ -8,18 +8,37 @@ import {
 import { globalCircuitRegistry } from "./circuit-breaker";
 import { calculateBackoffDelay, shouldRetry } from "./retry";
 import { globalSSEBroker } from "./sse-broker";
+import { persistEventToDb, loadRecentEventsFromDb, purgeAllEventsFromDb } from "./db";
+import { sendAlertNotification } from "./alerts";
 import crypto from "crypto";
 
 /**
- * HookFlow In-Memory & Distributed Datastore Layer
- * Operates as high-speed resilient event ledger with Neon / PostgreSQL sync readiness.
+ * HookFlow Resilient Datastore & Ingestion Core
+ * Operates as high-speed resilient event ledger synced with Neon PostgreSQL cloud database.
  */
 class HookFlowStore {
   private events: Map<string, WebhookEvent> = new Map();
   private destinations: Map<string, WebhookDestination> = new Map();
+  private initializedFromDb = false;
 
   constructor() {
     this.seedDefaults();
+    this.syncFromNeon();
+  }
+
+  private async syncFromNeon() {
+    try {
+      const dbEvents = await loadRecentEventsFromDb(100);
+      if (dbEvents.length > 0) {
+        for (const ev of dbEvents) {
+          this.events.set(ev.id, ev);
+        }
+        console.log(`[HookFlow Store] Synced ${dbEvents.length} events from Neon PostgreSQL.`);
+      }
+      this.initializedFromDb = true;
+    } catch (err) {
+      console.warn("[HookFlow Store] Neon sync notice:", err);
+    }
   }
 
   private seedDefaults() {
@@ -144,6 +163,7 @@ class HookFlowStore {
   public saveEvent(event: WebhookEvent): WebhookEvent {
     this.events.set(event.id, event);
     globalSSEBroker.broadcast("event_updated", event);
+    persistEventToDb(event).catch(() => {});
     return event;
   }
 
@@ -172,6 +192,17 @@ class HookFlowStore {
       event.status = "CIRCUIT_BROKEN";
       event.circuitStateAtDelivery = "OPEN";
       event.updatedAt = Date.now();
+      sendAlertNotification(
+        "Circuit Breaker Tripped (OPEN)",
+        `Destination ${event.destinationUrl} is failing. Circuit tripped to OPEN to prevent thundering herd.`,
+        {
+          eventId: event.id,
+          source: event.source,
+          status: "CIRCUIT_BROKEN",
+          destination: event.destinationUrl,
+          severity: "warning",
+        }
+      ).catch(() => {});
       this.saveEvent(event);
       return event;
     }
@@ -239,6 +270,18 @@ class HookFlowStore {
           // Reached max retries or non-retryable error
           cb.recordFailure();
           event.status = "FAILED_DLQ";
+          sendAlertNotification(
+            "Event Quarantined to Dead-Letter Queue (DLQ)",
+            `Event ${event.id} (${event.source}) exhausted retries and has been isolated to DLQ for manual inspection.`,
+            {
+              eventId: event.id,
+              source: event.source,
+              status: "FAILED_DLQ",
+              destination: event.destinationUrl,
+              attempts: attemptNumber,
+              severity: "danger",
+            }
+          ).catch(() => {});
         }
       }
     } catch (err: unknown) {
@@ -260,6 +303,18 @@ class HookFlowStore {
         }, Math.min(backoffDelay, 15000));
       } else {
         event.status = "FAILED_DLQ";
+        sendAlertNotification(
+          "Network Connection Failure — Event Quarantined to DLQ",
+          `Event ${event.id} (${event.source}) experienced network failure: ${attempt.error}. Moved to DLQ.`,
+          {
+            eventId: event.id,
+            source: event.source,
+            status: "FAILED_DLQ",
+            destination: event.destinationUrl,
+            attempts: attemptNumber,
+            severity: "danger",
+          }
+        ).catch(() => {});
       }
     }
 
@@ -313,6 +368,7 @@ class HookFlowStore {
 
   public clearAll(): void {
     this.events.clear();
+    purgeAllEventsFromDb().catch(() => {});
   }
 }
 

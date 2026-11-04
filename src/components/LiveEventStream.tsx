@@ -11,6 +11,9 @@ import {
   ArrowRight,
   Filter,
   Trash2,
+  Download,
+  FileSpreadsheet,
+  FileCode,
 } from "lucide-react";
 
 interface LiveEventStreamProps {
@@ -30,6 +33,46 @@ export const LiveEventStream: React.FC<LiveEventStreamProps> = ({
 }) => {
   const [filter, setFilter] = useState<"ALL" | EventStatus>("ALL");
   const [search, setSearch] = useState("");
+
+  const exportCSV = () => {
+    if (filteredEvents.length === 0) return;
+    const headers = ["ID", "Source", "DestinationUrl", "Status", "Attempts", "MaxRetries", "CreatedAt", "LastStatusCode", "LastLatencyMs"];
+    const rows = filteredEvents.map((ev) => {
+      const last = ev.attempts[ev.attempts.length - 1];
+      return [
+        `"${ev.id}"`,
+        `"${ev.source}"`,
+        `"${ev.destinationUrl}"`,
+        `"${ev.status}"`,
+        ev.attempts.length,
+        ev.maxRetries,
+        `"${new Date(ev.createdAt).toISOString()}"`,
+        last?.statusCode || "N/A",
+        last?.durationMs || 0,
+      ].join(",");
+    });
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `hookflow-ledger-${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportJSON = () => {
+    if (filteredEvents.length === 0) return;
+    const blob = new Blob([JSON.stringify(filteredEvents, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `hookflow-ledger-${Date.now()}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const filteredEvents = events.filter((e) => {
     const matchesFilter = filter === "ALL" ? true : e.status === filter;
@@ -125,13 +168,31 @@ export const LiveEventStream: React.FC<LiveEventStreamProps> = ({
           </div>
 
           {events.length > 0 && (
-            <button
-              onClick={onClearAll}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-400 hover:bg-rose-950/30 transition border border-transparent hover:border-rose-900/40"
-              title="Purge Ledger"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={exportCSV}
+                className="flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+                title="Export Filtered Events as CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>CSV</span>
+              </button>
+              <button
+                onClick={exportJSON}
+                className="flex items-center space-x-1 px-2.5 py-1 text-[11px] font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+                title="Export Filtered Events as JSON"
+              >
+                <FileCode className="w-3.5 h-3.5 text-sky-400" />
+                <span>JSON</span>
+              </button>
+              <button
+                onClick={onClearAll}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition border border-transparent hover:border-rose-900/40"
+                title="Purge Ledger"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
           )}
         </div>
       </div>

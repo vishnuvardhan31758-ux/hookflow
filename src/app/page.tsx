@@ -12,7 +12,10 @@ import { ReplayModal } from "@/components/ReplayModal";
 import { ArchitectureModal } from "@/components/ArchitectureModal";
 import { ApiKeysView } from "@/components/ApiKeysView";
 import { AuditLogsView } from "@/components/AuditLogsView";
+import { AlertChannelsView } from "@/components/AlertChannelsView";
+import { HmacStudio } from "@/components/HmacStudio";
 import { useToast } from "@/context/ToastContext";
+import { Database, ShieldCheck, Cpu, Github, ExternalLink, Zap } from "lucide-react";
 
 const initialMetrics: MetricsSummary = {
   totalReceived: 0,
@@ -41,7 +44,7 @@ export default function Home() {
     setIsRefreshing(true);
     try {
       const [eventsRes, destsRes] = await Promise.all([
-        fetch("/api/v1/events?limit=50"),
+        fetch("/api/v1/events?limit=100"),
         fetch("/api/v1/destinations"),
       ]);
 
@@ -82,8 +85,6 @@ export default function Home() {
             }
             return [updatedEvent, ...prev];
           });
-
-          // Refresh metrics on updates
           loadData();
         } catch (err) {
           console.error("SSE parse error:", err);
@@ -113,12 +114,12 @@ export default function Home() {
     await fetch("/api/v1/events", { method: "DELETE" });
     setEvents([]);
     setSelectedEvent(null);
-    showToast("Event ledger purged.", "info");
+    showToast("Event ledger purged from memory & Neon PostgreSQL.", "info");
     loadData();
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-cyber-dark text-gray-100">
+    <div className="min-h-screen flex flex-col bg-[#07090e] text-slate-100 selection:bg-sky-500/30 selection:text-sky-200">
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -126,7 +127,7 @@ export default function Home() {
         onOpenArchitecture={() => setIsArchitectureOpen(true)}
         onRefresh={() => {
           loadData();
-          showToast("Data refreshed.", "info");
+          showToast("Telemetry & database reloaded.", "info");
         }}
         isRefreshing={isRefreshing}
       />
@@ -135,33 +136,50 @@ export default function Home() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Cockpit / Overview Tab */}
         {activeTab === "cockpit" && (
-          <div className="space-y-6 animate-in fade-in duration-150">
-            {/* Banner */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-sky-950/40 via-indigo-950/30 to-purple-950/20 border border-sky-900/30 shadow-sm">
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-sky-400">
-                    Enterprise Web Engineering Platform
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
-                    Active Session Ready
-                  </span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight mt-1">
-                  HookFlow Distributed Event Ingestion & Webhook Gateway
-                </h1>
-                <p className="text-xs text-gray-400 mt-1 max-w-3xl">
-                  Fault-tolerant event ingestion engine built with HMAC-SHA256 constant-time verification, distributed token-bucket rate limiting, exponential backoff with full jitter, circuit breakers, and automated DLQ recovery.
-                </p>
-              </div>
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Executive Hero Banner */}
+            <div className="relative overflow-hidden p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-slate-900/90 via-[#0d121f] to-slate-950 border border-slate-800 shadow-2xl">
+              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute bottom-0 left-1/3 -mb-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-              <div className="mt-4 md:mt-0 flex items-center space-x-2 shrink-0">
-                <button
-                  onClick={() => setIsArchitectureOpen(true)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-sky-500 hover:bg-sky-400 text-gray-950 shadow-lg shadow-sky-500/20 transition"
-                >
-                  View Architecture & ADRs
-                </button>
+              <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                      Enterprise Distributed Webhook Engine
+                    </span>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 flex items-center space-x-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Neon PostgreSQL Connected (AWS us-east-2)</span>
+                    </span>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 flex items-center space-x-1">
+                      <span>Architect: Vishnu Vardhan</span>
+                    </span>
+                  </div>
+
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-3">
+                    HookFlow Ingestion Gateway & Fault-Tolerant Delivery Engine
+                  </h1>
+
+                  <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-3xl leading-relaxed">
+                    Zero-Data-Loss event gateway providing RFC-compliant Idempotency (preventing double-spend mutations), token-bucket rate limiting, 3-state Circuit Breakers, and exponential backoff with full random jitter to prevent Thundering Herd cascading outages.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={() => setActiveTab("alerts")}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-900/40 shadow-sm transition flex items-center space-x-1.5"
+                  >
+                    <span>Configure Alert Channels</span>
+                  </button>
+                  <button
+                    onClick={() => setIsArchitectureOpen(true)}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-bold shadow-lg shadow-sky-500/20 transition"
+                  >
+                    Architecture & ADRs
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -188,7 +206,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Endpoints Tab */}
+        {/* Endpoints & Circuits Tab */}
         {activeTab === "endpoints" && (
           <div className="animate-in fade-in duration-150">
             <DestinationManager
@@ -198,7 +216,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Event Ledger Tab */}
+        {/* Event Ledger & DLQ Tab */}
         {activeTab === "events" && (
           <div className="animate-in fade-in duration-150 space-y-4">
             <LiveEventStream
@@ -208,6 +226,20 @@ export default function Home() {
               onOpenReplay={setReplayEvent}
               onClearAll={handleClearAll}
             />
+          </div>
+        )}
+
+        {/* Discord & Slack Incident Alert Channels Tab */}
+        {activeTab === "alerts" && (
+          <div className="animate-in fade-in duration-150">
+            <AlertChannelsView />
+          </div>
+        )}
+
+        {/* HMAC Cryptographic Signature Studio */}
+        {activeTab === "signer" && (
+          <div className="animate-in fade-in duration-150">
+            <HmacStudio />
           </div>
         )}
 
@@ -246,28 +278,36 @@ export default function Home() {
         }}
       />
 
-      {/* System Architecture & Master's Academic Evaluation Modal */}
+      {/* System Architecture Modal */}
       <ArchitectureModal
         isOpen={isArchitectureOpen}
         onClose={() => setIsArchitectureOpen(false)}
       />
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-gray-800/80 bg-gray-950/80 py-6 text-xs text-gray-500">
+      <footer className="mt-auto border-t border-slate-800/80 bg-[#06080d] py-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-gray-300">HookFlow</span>
+            <span className="font-bold text-slate-200">HookFlow</span>
             <span>—</span>
-            <span>M.Sc. Web Engineering Capstone Project</span>
+            <span>Architected & Built by <strong className="text-slate-300">Vishnu Vardhan</strong></span>
           </div>
           <div className="flex items-center space-x-4">
+            <a
+              href="https://github.com/vishnuvardhan31758-ux/hookflow"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-sky-400 transition"
+            >
+              GitHub Repository
+            </a>
             <a href="/api/openapi" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition">
-              OpenAPI Spec
+              OpenAPI Contract
             </a>
             <a href="/api/healthz" target="_blank" rel="noopener noreferrer" className="hover:text-sky-400 transition">
               Health Checks
             </a>
-            <span>Zero-Cost Global Cloud Deployment</span>
+            <span className="text-emerald-400 font-mono">Neon DB Connected</span>
           </div>
         </div>
       </footer>

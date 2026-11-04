@@ -69,6 +69,27 @@ export async function POST(req: NextRequest) {
         { title: "Mechanical Keyboard - Cherry MX Blue", quantity: 1, price: "129.50" },
       ],
     };
+  } else if (scenario === "razorpay") {
+    source = "razorpay.payment.authorized";
+    payload = {
+      payment_id: `pay_${crypto.randomBytes(7).toString("hex")}`,
+      order_id: `order_${crypto.randomBytes(7).toString("hex")}`,
+      amount: 149900,
+      currency: "INR",
+      method: "upi",
+      email: "customer@corp.in",
+      contact: "+919876543210",
+      status: "authorized",
+    };
+  } else if (scenario === "twilio") {
+    source = "twilio.sms.delivered";
+    payload = {
+      MessageSid: `SM${crypto.randomBytes(16).toString("hex")}`,
+      MessageStatus: "delivered",
+      To: "+14155552671",
+      From: "+15017122661",
+      ApiVersion: "2010-04-01",
+    };
   } else if (scenario === "failing_500") {
     source = "billing.invoice.payment_failed";
     payload = {
